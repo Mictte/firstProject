@@ -1,70 +1,90 @@
 import { View, Text, TextInput, StyleSheet, Button, Image } from 'react-native';
-//
-import{ useState } from 'react';
+import { useState } from 'react';
+import { useTheme } from '@react-navigation/native';
 
-
-//CoontactForm es nuestro componente reutilizable 
+//CoontactForm es nuestro componente reutilizable
 //export defaullt Permite importalo en otros archivos
-export default function ContactForm() {
-// para almacenar los datos ingresados.
-    const [name, setName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [age, setAge] = useState('');
-    const [phone, setPhone] = useState('');
-    const [email, setEmail] = useState('');
+export default function ContactForm({ onSave, initialContact = null }) {
+  const { colors } = useTheme();
 
-    // funcion para visualizar la informacion entrante
-    const handleSubmit = () => {
-        console.log('Datos del formulario:',{
-            name,
-            lastName,
-            age,
-            phone,
-            email
-        });
+  // para almacenar los datos ingresados.
+  const [name, setName] = useState(initialContact?.name ?? '');
+  const [lastName, setLastName] = useState(initialContact?.lastName ?? '');
+  const [age, setAge] = useState(initialContact?.age ?? '');
+  const [phone, setPhone] = useState(initialContact?.phone ?? '');
+  const [email, setEmail] = useState(initialContact?.email ?? '');
+  const [error, setError] = useState('');
+
+  //Guardar los datos del formulario
+  const handleSubmit = () => {
+    //validamos que se haya ingresado el nombre
+    if (name.trim() === '') {
+      setError('El nombre es oblgatorio.');
+      return;
+    }
+
+    setError('');
+
+    const contactData = {
+      name: name.trim(),
+      lastName: lastName.trim(),
+      age: age.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
     };
-//Funcion para limpiar el formularioo 
-    const handleClear =()=>{
-        setName('');
-        setLastName('');
-        setAge('');
-        setPhone('');
-        setEmail('');
-    };
 
+    // Envia el contacto a la pantalla padre
+    onSave(contactData);
+  };
 
+  //Funcion para limpiar el formularioo
+  const handleClear = () => {
+    setName('');
+    setLastName('');
+    setAge('');
+    setPhone('');
+    setEmail('');
+    setError('');
+  };
+
+  const inputColors = {
+    backgroundColor: colors.input,
+    borderColor: colors.border,
+    color: colors.text,
+  };
 
   return (
-    <View style={styles.formContainer}>
-        <Image
-        source={require('../../assets/bulbasur.png')}
-        style={styles.pokemonImage}
-        />
+    <View style={[styles.formContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Image source={require('../../assets/bulbasur.png')} style={styles.pokemonImage} />
 
+      <Text style={[styles.title, { color: colors.text }]}>{initialContact ? 'Editar contacto' : 'Registro de contacto'}</Text>
 
-      <Text>Registro de contacto</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Nombre:</Text>
+      <TextInput style={[styles.input, inputColors]} placeholder="Ingresa tu Nombre" placeholderTextColor={colors.secondary} value={name} onChangeText={setName} />
 
-      <Text>Nombre:</Text>
-      <TextInput style={styles.input} placeholder="Ingresa tu Nombre" value={name} onChangeText={setName} />
+      <Text style={[styles.label, { color: colors.text }]}>Apellido:</Text>
+      <TextInput style={[styles.input, inputColors]} placeholder="Ingresa tu Apellido" placeholderTextColor={colors.secondary} value={lastName} onChangeText={setLastName} />
 
-      <Text>Apellido:</Text>
-      <TextInput style={styles.input} placeholder="Ingresa tu Apellido" value={lastName} onChangeText={setLastName} />
+      <Text style={[styles.label, { color: colors.text }]}>Edad:</Text>
+      <TextInput style={[styles.input, inputColors]} placeholder="Ingresa tu Edad" placeholderTextColor={colors.secondary} keyboardType="numeric" value={age} onChangeText={setAge} />
 
-      <Text>Edad:</Text>
-      <TextInput style={styles.input} placeholder="Ingresa tu Edad" keyboardType="numeric" value={age} onChangeText={setAge} />
+      <Text style={[styles.label, { color: colors.text }]}>Teléfono:</Text>
+      <TextInput style={[styles.input, inputColors]} placeholder="Ingresa tu teléfono" placeholderTextColor={colors.secondary} keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
 
-      <Text>Teléfono:</Text>
-      <TextInput style={styles.input} placeholder="Ingresa tu teléfono" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
+      <Text style={[styles.label, { color: colors.text }]}>Correo:</Text>
+      <TextInput style={[styles.input, inputColors]} placeholder="Ingresa tu correo" placeholderTextColor={colors.secondary} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
 
-      <Text>Correo:</Text>
-      <TextInput style={styles.input} placeholder="Ingresa tu correo" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-      
-      <Button title="Guardar" onPress={handleSubmit} color="#2563eb" />
+      {error !== '' && (
+        <Text style={[styles.errorText, { color: colors.notification }]}>{error}</Text>
+      )}
 
-      <View style={styles.clearButtonContainer}>
-        <Button title='Limpiar' onPress={handleClear}color="#64748b"/>
+      <View style={styles.buttonContainer}>
+        <Button title={initialContact ? 'Guardar cambios' : 'Guardar'} onPress={handleSubmit} color={colors.primary} />
       </View>
 
+      <View style={styles.clearButtonContainer}>
+        <Button title="Limpiar" onPress={handleClear} color={colors.secondary} />
+      </View>
     </View>
   );
 }
@@ -80,7 +100,7 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
 
-   pokemonImage: {
+  pokemonImage: {
     width: 120,
     height: 120,
     alignSelf: 'center',
@@ -125,7 +145,14 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 8,
   },
-  clearButtonContainer:{
-    marginTop:10,
+
+  clearButtonContainer: {
+    marginTop: 10,
+  },
+
+  errorText: {
+    color: '#dc2626',
+    fontSize: 14,
+    marginBottom: 10,
   },
 });
